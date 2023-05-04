@@ -1,3 +1,5 @@
+criminaldb = {}
+
 class CriminalTemplate:
     
     def __init_(self, name, age, offense, sentences, status):
@@ -6,5 +8,6 @@ class CriminalTemplate:
         self.offense = offense
         self.sentences = sentences
         self.status = status
-    def dicttemp(self):
+    def addingdict(self):
+        criminaldb[self.name] = 
         
