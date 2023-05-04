@@ -1,4 +1,5 @@
-criminaldb = {}
+def new_dict(varname):
+    globals()[varname] = {}
 
 class CriminalTemplate:
     
