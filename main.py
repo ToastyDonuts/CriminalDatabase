@@ -1,6 +1,9 @@
 def new_dict(varname):
     globals()[varname] = {}
 
+def mainmenu():
+    pass
+
 class CriminalTemplate:
     
     def __init_(self, name, age, offense, sentences, status):
@@ -10,5 +13,5 @@ class CriminalTemplate:
         self.sentences = sentences
         self.status = status
     def addingdict(self):
-        criminaldb[self.name] = 
+        new_dict()
         
