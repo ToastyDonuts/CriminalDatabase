@@ -2,7 +2,6 @@ import sqlite3
 import bcrypt
 from questionary import prompt
 import questionary
-from collections.abc import Mapping
 
 # Connect to the SQLite database
 conn = sqlite3.connect('users.db')
