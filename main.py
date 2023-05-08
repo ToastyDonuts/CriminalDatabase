@@ -1,11 +1,12 @@
 from questionary import prompt
 import questionary
 import login_system
-import pprint
+from prettytable import PrettyTable
+import sqlite3
 
 criminal_data = {}
 
-class Main_Menu():
+class MainMenu():
     def showMenu(self):
         mainmenustuff = [
             {
@@ -28,7 +29,7 @@ class Main_Menu():
             exit()
         else:
             print("Invalid choice")
-    
+
 class AddRemoveData():
     def __init__(self):
         self.add_name = None
@@ -47,93 +48,140 @@ class AddRemoveData():
         self.add_remove_choices_var = prompt(add_remove_choices)
         if self.add_remove_choices_var["addremovechoices"] == 'Add data to the database':
             self.add_loop = True
-            self.adddata(criminal_data)
+            self.adddata()
         if self.add_remove_choices_var["addremovechoices"] == 'Remove data from the database':
              pass
         if self.add_remove_choices_var["addremovechoices"] == 'Return to Main Menu':
-             self.addremovereturntomenu()
-    def adddata(self, criminal_data):
+                return_to_main_menu()
+    def adddata(self):
             while self.add_loop == True:
                 self.addname = questionary.text("Name of the person you would like to add").ask()
                 self.addage = questionary.text("Age of the person you would like to add").ask()
                 self.addstatus = questionary.text("Punishment Status of the person you would like to add").ask()
                 self.addoffense = questionary.text("Offense of the person you would like to add").ask()
-                dictsys = dictionarysys(self.addname, self.addage, self.addstatus, self.addoffense)
-                dictsys.createnewsets(criminal_data)
+                criminal_data[self.addname] = (self.addname, self.addage, self.addstatus, self.addoffense)
+                database_class = database
+                database_create = database_class.dbcreatedata
+                database_create(self)
                 self.ask_loop = questionary.confirm("Would you like to add more data?").ask()
                 if self.ask_loop:
+                    self.add_loop = True
                     pass
                 else:  
                     self.add_loop = False
-                    self.addremovereturntomenu()
+                    AddRemoveData()
+
 
     def removedata(self):
             pass
-    def addremovereturntomenu(self):
-            self.ask_return_to_menu = questionary.confirm("Would you like to return to main menu?").ask()
-            if self.ask_return_to_menu:
-                go_to_main_menu = Main_Menu()
-                go_to_main_menu.showMenu()
-            else:       
-                AddRemoveData()
 class CheckData():
     def __init__(self):
-            self.check_name = None
-            check_data_question = [
-                 {
-                    'type': 'select',
-                    'message': "Please select your operations",
-                    'name': 'checkdata',
-                    "choices": ["Check specific person's data", "List all available data", "Return to Main Menu"]
-                 }
-            ]
-            self.check_data_prompt = prompt(check_data_question)
-            self.check_loop = False
-            if self.check_data_prompt["checkdata"] == "Check specific person's data":
-                 self.check_name = questionary.text("Enter the name of the person you would like to search up").ask()
-                 self.checkdatabyname()
-            if self.check_data_prompt["checkdata"] == "List all available data":
-                 self.listalldata()
-            if self.check_data_prompt["checkdata"] == "Return to Main Menu":
-                 self.checkdatareturntomenu()
-    def checkdatabyname(self):
-            if self.check_name in criminal_data:
-                pprint.pprint(criminal_data[self.check_name])
-            else:
-                print("Data not found for this person")
-                check_loop_ask = questionary.confirm("Would you like to search more data?").ask()
-                if check_loop_ask:
-                     self.check_loop = True
-                     pass
-                else:
-                     CheckData()
-            while self.check_loop == True:
-                 self.check_name = questionary.text("Enter the name of the person you would like to search up").ask()
-                 self.checkdatabyname()
-    def listalldata(self):
-         pprint.pprint(criminal_data)
-    def checkdatareturntomenu(self):
-        self.ask_return_to_menu = questionary.confirm("Would you like to return to main menu?").ask()
-        if self.ask_return_to_menu:
-            go_to_main_menu = Main_Menu()
-            go_to_main_menu.showMenu()
-        else:       
-            CheckData()
+        check_data_question = [
+             {
+                'type': 'select',
+                'message': "Please select your operations",
+                'name': 'checkdata',
+                "choices": ["Check specific person's data", "List all available data", "Return to Main Menu"]
+             }
+        ]
+        self.check_data_prompt = prompt(check_data_question)
+        self.check_loop = False
+        if self.check_data_prompt["checkdata"] == "Check specific person's data":
+            self.checkdatabyname() # Call the checkdatabyname function
+            self.check_loop = True
+        if self.check_data_prompt["checkdata"] == "List all available data":
+            self.listalldata()
+        if self.check_data_prompt["checkdata"] == "Return to Main Menu":
+            MainMenu().showMenu() # Call the showMenu function of the MainMenu class
 
+    def checkdatabyname(self):
+        check_by_name_init_db = database()
+        check_by_name_init_func = check_by_name_init_db.listspecificdata
+        specific_ask_name_loop = False
+        while specific_ask_name_loop == False:
+            ask_name = questionary.text("Enter the name of the person you like to search up").ask()
+            check_by_name_init_func(ask_name)
+            specific_ask_name_loop_ask = questionary.confirm("Would you like to search for more data").ask()
+            if specific_ask_name_loop_ask:
+                pass
+            else:
+                CheckData() # Create a new instance of the CheckData class when the user is done searching
+    def listalldata(self):      
+            database.listalldata(self)
+    
 class ModifyData():
     pass
-class dictionarysys():
-    def __init__(self, add_name, add_age, add_status, add_offense):
-        self.add_name = add_name
-        self.add_age = add_age
-        self.add_status = add_status
-        self.add_offense = add_offense
-    def createnewsets(self, criminal_data):
-        criminal_data[self.add_name] = (self.add_name, self.add_age, self.add_status, self.add_offense)
-        print(criminal_data)
+
+class database():
+    def dbcreatedata(self):
+        # connect to a database file
+        conn = sqlite3.connect('criminal_data.db')
+        # create a cursor
+        c = conn.cursor()
+        # create a table to store criminal data
+        c.execute('''CREATE TABLE IF NOT EXISTS criminal_data
+                    (name text, age integer, punishment text, offense text)''')
+        # insert data into the table
+        for name, data in criminal_data.items():
+            c.execute("SELECT * FROM criminal_data WHERE name=?", (name,))
+            row = c.fetchone()
+            if row:
+                print(f'Data for {name} already exists in the table.')
+            else:
+                c.execute("INSERT INTO criminal_data VALUES (?, ?, ?, ?)", data)
+                print(f"Data for {name} added successfully.")
+        # commit the changes and close the connection
+        conn.commit()
+        conn.close()
+    def listalldata(self):
+        conn = sqlite3.connect('criminal_data.db')
+        c = conn.cursor()
+        # Execute a query to retrieve data from table
+        c.execute('SELECT * FROM criminal_data')
+        # Get column names and data rows
+        rows = c.fetchall()
+        # Create a pretty table and add columns
+        listalltable = PrettyTable()
+        listalltable.field_names = ["Name", "Age", "Punishment", "Offense"]
+        # Add rows to table
+        for row in rows:
+            listalltable.add_row(row)
+        # Print the table
+        print(listalltable)
+        # Close the database connection
+        conn.close()
+    def listspecificdata(self, name_to_search):
+        # Connect to the database
+        conn = sqlite3.connect('criminal_data.db')
+        # Create a cursor object
+        c = conn.cursor()
+        # Execute a SELECT statement with a WHERE clause to search for a specific name
+        print(f"Searching for data with name '{name_to_search}'...")
+        c.execute("SELECT * FROM criminal_data WHERE name=?", (name_to_search,))
+        listsearchtable = PrettyTable()
+        listsearchtable.field_names = ["Name", "Age", "Punishment", "Offense"]
+        # Fetch the results
+        results = c.fetchall()
+        print(f"Found {len(results)} matching rows")
+        if results is not None:
+            # Add the results to the table
+            for row in results:
+                listsearchtable.add_row(row)
+            # Print the table
+            print(listsearchtable)
+        else:
+            print("No data found for this person")
+        # Close the cursor and the connection
+        c.close()
+        conn.close()
+        
+
+def return_to_main_menu():
+        go_to_main_menu = MainMenu()
+        go_to_main_menu.showMenu()
 
 login_system.loginsys()
 if login_system.loggedin == True:
-    go_to_main_menu = Main_Menu()
+    go_to_main_menu = MainMenu()
     go_to_main_menu.showMenu()
 

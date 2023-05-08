@@ -51,6 +51,7 @@ def login():
     # Print an error message if the login fails
     else:
         print('Invalid username or password')
+        login()
 
 # Main loop
 def loginsys():
