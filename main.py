@@ -19,7 +19,7 @@ class MainMenu():
         main_menu_choices = prompt(mainmenustuff)
         if main_menu_choices["mainmenuchoice"] == 'Add or Remove Criminal Data':
             add_remove_data = AddRemoveData()
-            add_remove_data.add_remove_choices_var()
+            add_remove_data.add_remove_choices_var
         elif main_menu_choices["mainmenuchoice"] == 'Check Criminals Data':
             check_criminal_data = CheckData()
             check_criminal_data.check_data_prompt
@@ -29,7 +29,7 @@ class MainMenu():
             exit()
         else:
             print("Invalid choice")
-
+ 
 class AddRemoveData():
     def __init__(self):
         self.add_name = None
@@ -50,7 +50,10 @@ class AddRemoveData():
             self.add_loop = True
             self.add_data()
         if self.add_remove_choices_var["addremovechoices"] == 'Remove data from the database':
-             pass
+            name_to_delete = questionary.text("Name of the person you would like to delete").ask()
+            remove_data_init_db = Database()
+            remove_data_init_func = remove_data_init_db.delete_specific_data_from_db
+            remove_data_init_func(name_to_delete)
         if self.add_remove_choices_var["addremovechoices"] == 'Return to Main Menu':
                 MainMenu().show_menu()
     def add_data(self):
@@ -149,6 +152,7 @@ class Database():
             list_all_table.add_row(row)
         # Print the table
         print(list_all_table)
+        AddRemoveData()
         # Close the database connection
         conn.close()
     def list_specific_data(self, name_to_search):
@@ -176,6 +180,41 @@ class Database():
         c.close()
         conn.close()
         
+    def delete_specific_data_from_db(self, name_to_delete):
+        # Connect to the database
+        conn = sqlite3.connect('criminal_data.db')
+        # Create a cursor object
+        c = conn.cursor()
+        # Execute a SELECT statement with a WHERE clause to search for a specific name
+        print(f"Searching for data with name '{name_to_delete}'...")
+        c.execute("SELECT * FROM criminal_data WHERE name=?", (name_to_delete,))
+        list_search_table = PrettyTable()
+        list_search_table.field_names = ["Name", "Age", "Punishment", "Offense"]
+        # Fetch the results
+        results = c.fetchall()
+        print(f"Found {len(results)} matching rows") 
+        if results is not None:
+            # Add the results to the table
+            for row in results:
+                list_search_table.add_row(row)
+            # Print the table
+            print(list_search_table)
+            delete_specific_data_confirmation = questionary.confirm(f"Are you sure you wanted to delete '{results}' from the database?").ask()
+            if delete_specific_data_confirmation:
+                c.execute("DELETE FROM criminal_data WHERE name=?", (name_to_delete,))
+                print(f"'{name_to_delete}' has been successfully deleted")
+                conn.commit()
+                c.execute('VACUUM')
+                conn.commit()
+                AddRemoveData()
+            else:
+                print(f"Data deletion for '{name_to_delete}' has been cancelled")
+                AddRemoveData()
+        else:
+            print("No data found for this person")
+        # Close the cursor and the connection
+        c.close()
+        conn.close()
 
 def return_to_main_menu():
         go_to_main_menu = MainMenu()
