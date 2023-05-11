@@ -3,6 +3,8 @@ import questionary
 import login_system
 from prettytable import PrettyTable
 import sqlite3
+import readchar
+
 
 criminal_data = {}
 
@@ -50,10 +52,7 @@ class AddRemoveData():
             self.add_loop = True
             self.add_data()
         if self.add_remove_choices_var["addremovechoices"] == 'Remove data from the database':
-            name_to_delete = questionary.text("Name of the person you would like to delete").ask()
-            remove_data_init_db = Database()
-            remove_data_init_func = remove_data_init_db.delete_specific_data_from_db
-            remove_data_init_func(name_to_delete)
+            self.removedata()
         if self.add_remove_choices_var["addremovechoices"] == 'Return to Main Menu':
                 MainMenu().show_menu()
     def add_data(self):
@@ -76,7 +75,10 @@ class AddRemoveData():
 
 
     def removedata(self):
-            pass
+            name_to_delete = questionary.text("Name of the person you would like to delete").ask()
+            remove_data_init_db = Database()
+            remove_data_init_func = remove_data_init_db.delete_specific_data_from_db
+            remove_data_init_func(name_to_delete)
 class CheckData():
     def __init__(self):
         check_data_question = [
@@ -84,26 +86,26 @@ class CheckData():
                 'type': 'select',
                 'message': "Please select your operations",
                 'name': 'checkdata',
-                "choices": ["Check specific person's data", "List all available data", "Return to Main Menu"]
+                "choices": ["Check specific data", "List all available data", "Return to Main Menu"]
              }
         ]
         self.check_data_prompt = prompt(check_data_question)
         self.check_loop = False
-        if self.check_data_prompt["checkdata"] == "Check specific person's data":
-            self.check_data_by_name() # Call the checkdatabyname function
+        if self.check_data_prompt["checkdata"] == "Check specific data":
+            self.check_specific_data() # Call the checkdatabyname function
             self.check_loop = True
         if self.check_data_prompt["checkdata"] == "List all available data":
             self.list_all_data()
         if self.check_data_prompt["checkdata"] == "Return to Main Menu":
             MainMenu().show_menu() # Call the showMenu function of the MainMenu class
 
-    def check_data_by_name(self):
+    def check_specific_data(self):
         check_by_name_init_db = Database()
         check_by_name_init_func = check_by_name_init_db.list_specific_data
         specific_ask_name_loop = False
         while specific_ask_name_loop == False:
-            ask_name = questionary.text("Enter the name of the person you like to search up").ask()
-            check_by_name_init_func(ask_name)
+            ask_data = questionary.text("Enter the data value that you like to search").ask()
+            check_by_name_init_func(ask_data)
             specific_ask_name_loop_ask = questionary.confirm("Would you like to search for more data").ask()
             if specific_ask_name_loop_ask:
                 pass
@@ -152,17 +154,20 @@ class Database():
             list_all_table.add_row(row)
         # Print the table
         print(list_all_table)
-        AddRemoveData()
+        print("Press any key to continue...")
+        readchar.readkey()
+        CheckData()
         # Close the database connection
         conn.close()
-    def list_specific_data(self, name_to_search):
+    def list_specific_data(self, data_to_search):
         # Connect to the database
         conn = sqlite3.connect('criminal_data.db')
         # Create a cursor object
         c = conn.cursor()
         # Execute a SELECT statement with a WHERE clause to search for a specific name
-        print(f"Searching for data with name '{name_to_search}'...")
-        c.execute("SELECT * FROM criminal_data WHERE name=?", (name_to_search,))
+        print(f"Searching for data with name '{data_to_search}'...")
+        query = "SELECT * FROM criminal_data WHERE name=? OR age=? OR offense=? OR punishment=?"
+        c.execute(query, (data_to_search, data_to_search, data_to_search, data_to_search))
         list_search_table = PrettyTable()
         list_search_table.field_names = ["Name", "Age", "Punishment", "Offense"]
         # Fetch the results
